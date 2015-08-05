@@ -1,0 +1,57 @@
+<?php
+/**
+ * @file
+ * Provides a Views style plugin for displaying content with Mixitup filtering.
+ */
+
+/**
+ * Implements hook_views_api().
+ */
+function mixitup_extended_views_api() {
+  return array('api' => 3);
+}
+
+/**
+ * Preprocess function for views_view_mixitup_extended.tpl.php.
+ */
+function template_preprocess_views_view_mixitup_extended(&$vars) {
+  // Run preprocess function for unformatted style.
+  template_preprocess_views_view_unformatted($vars);
+
+  // Get view options.
+  $view = $vars['view'];
+  $options = $vars['options'];
+  if (isset($options['use_sort']) && $options['use_sort'] == 1 && isset($options['sorts'])) {
+    $sort_keys = array();
+    foreach ($options['sorts'] as $sort_item => $label) {
+      if (empty($label)) {
+        unset($options['sorts'][$sort_item]);
+        continue;
+      }
+      $sort_keys[$sort_item] = $label;
+    }
+  }
+  if (is_array($vars['view']->result)) {
+    mixitup_views_set_nodes_count(count($vars['view']->result));
+  }
+  // Populates result array with tids info.
+  foreach ($vars['view']->result as $id => $result) {
+    $vars['view']->result[$id]->classes = mixitup_views_get_rows_classes($result->nid);
+    if (!empty($sort_keys)) {
+      $sorts = array();
+      foreach ($result as $id_field => $val) {
+        if (isset($sort_keys[$id_field])) {
+          $sorts[] = 'data-' . $id_field . '="' . $val . '"';
+        }
+      }
+      $vars['view']->result[$id]->sorts = implode(' ', $sorts);
+    }
+  }
+  $filters = drupal_get_form('mixitup_views_filters_form', $options);
+  $vars['filters'] = drupal_render($filters);
+
+  // Display content in a Mixitup layout.
+  $container = '.view-' . drupal_clean_css_identifier($view->name) . '.view-display-id-' . $view->current_display . ' .view-content';
+
+  mixitup_views_apply($container, $options);
+}

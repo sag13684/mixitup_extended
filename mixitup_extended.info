@@ -1,0 +1,5 @@
+name = Mixitup Extended
+description = Views style for mixitup
+core = 7.x
+dependencies[] = mixitup_views
+files[] = views_plugin_style_mixitup_views_extended.inc
